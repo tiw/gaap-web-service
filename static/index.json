@@ -1,0 +1,10 @@
+{
+  "message": "US GAAP 2025 Web Service is running",
+  "description": "根据指标名称查找标签定义和参考标准",
+  "api_endpoints": {
+    "get_element_info": "/api/element/{element_name}",
+    "get_element_label": "/api/element/{element_name}/label",
+    "get_element_references": "/api/element/{element_name}/references"
+  },
+  "web_interface": "/index.html"
+}

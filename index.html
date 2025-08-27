@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US GAAP 2025 指标查询</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #elementName, #searchKeyword {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        #searchBtn, #listSearchBtn {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #searchBtn:hover, #listSearchBtn:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .label-section {
+            margin-bottom: 20px;
+        }
+        .references-section h3 {
+            margin-top: 0;
+        }
+        .reference-item {
+            background-color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .reference-uri {
+            color: #007bff;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .reference-uri:hover {
+            text-decoration: underline;
+        }
+        .reference-details {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .elements-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .element-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .element-item:hover {
+            background-color: #f0f8ff;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            margin: 0 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .pagination-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>US GAAP 2025 指标查询</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="search">指标查询</div>
+            <div class="tab" data-tab="list">指标列表</div>
+        </div>
+        
+        <!-- 指标查询标签页 -->
+        <div class="tab-content active" id="search-tab">
+            <div class="search-box">
+                <input type="text" id="elementName" placeholder="请输入指标名称，例如：AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+                <button id="searchBtn">查询</button>
+            </div>
+            <div class="loading" id="loading">
+                <p>查询中...</p>
+            </div>
+            <div class="error" id="error"></div>
+            <div class="result" id="result">
+                <div class="label-section">
+                    <h2>指标名称: <span id="elementNameResult"></span></h2>
+                    <p><strong>英文标签:</strong> <span id="labelResult"></span></p>
+                </div>
+                <div class="references-section">
+                    <h3>参考标准</h3>
+                    <div id="referencesResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 指标列表标签页 -->
+        <div class="tab-content" id="list-tab">
+            <div class="search-box">
+                <input type="text" id="searchKeyword" placeholder="搜索指标名称...">
+                <button id="listSearchBtn">搜索</button>
+            </div>
+            <div class="loading" id="listLoading">
+                <p>加载中...</p>
+            </div>
+            <div class="error" id="listError"></div>
+            <div class="pagination-info" id="paginationInfo"></div>
+            <div class="elements-list" id="elementsList"></div>
+            <div class="pagination">
+                <button id="prevPage" disabled>上一页</button>
+                <button id="nextPage">下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标签切换功能
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有活动状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    // 添加当前活动状态
+                    tab.classList.add('active');
+                    const tabName = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabName}-tab`).classList.add('active');
+                    
+                    // 如果切换到列表标签页，加载数据
+                    if (tabName === 'list') {
+                        loadElementsList();
+                    }
+                });
+            });
+            
+            // 指标查询功能
+            const searchBtn = document.getElementById('searchBtn');
+            const elementNameInput = document.getElementById('elementName');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            
+            // API基础URL
+            const API_BASE = '';
+            
+            // 搜索按钮点击事件
+            searchBtn.addEventListener('click', searchElement);
+            
+            // 回车键搜索
+            elementNameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchElement();
+                }
+            });
+            
+            // 指标列表功能
+            const searchKeywordInput = document.getElementById('searchKeyword');
+            const listSearchBtn = document.getElementById('listSearchBtn');
+            const listLoadingDiv = document.getElementById('listLoading');
+            const listErrorDiv = document.getElementById('listError');
+            const elementsListDiv = document.getElementById('elementsList');
+            const paginationInfoDiv = document.getElementById('paginationInfo');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            
+            let currentPage = 0;
+            const pageSize = 50;
+            let currentKeyword = '';
+            
+            // 列表搜索按钮点击事件
+            listSearchBtn.addEventListener('click', function() {
+                currentKeyword = searchKeywordInput.value.trim();
+                currentPage = 0;
+                loadElementsList();
+            });
+            
+            // 列表搜索回车键
+            searchKeywordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentKeyword = searchKeywordInput.value.trim();
+                    currentPage = 0;
+                    loadElementsList();
+                }
+            });
+            
+            // 分页按钮事件
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 0) {
+                    currentPage--;
+                    loadElementsList();
+                }
+            });
+            
+            nextPageBtn.addEventListener('click', function() {
+                currentPage++;
+                loadElementsList();
+            });
+            
+            function searchElement() {
+                const elementName = elementNameInput.value.trim();
+                
+                if (!elementName) {
+                    showError('请输入指标名称');
+                    return;
+                }
+                
+                // 显示加载状态
+                showLoading();
+                hideError();
+                hideResult();
+                
+                // 调用API
+                fetch(`${API_BASE}/element/${encodeURIComponent(elementName)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        hideLoading();
+                        displayResult(data);
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showError(`查询失败: ${error.message}`);
+                    });
+            }
+            
+            function displayResult(data) {
+                document.getElementById('elementNameResult').textContent = data.element_name;
+                document.getElementById('labelResult').textContent = data.label || '未找到标签定义';
+                
+                const referencesContainer = document.getElementById('referencesResult');
+                referencesContainer.innerHTML = '';
+                
+                if (data.references && data.references.length > 0) {
+                    data.references.forEach(ref => {
+                        const refDiv = document.createElement('div');
+                        refDiv.className = 'reference-item';
+                        
+                        const uriLink = document.createElement('a');
+                        uriLink.href = ref.uri;
+                        uriLink.className = 'reference-uri';
+                        uriLink.textContent = ref.uri;
+                        uriLink.target = '_blank';
+                        
+                        const detailsDiv = document.createElement('div');
+                        detailsDiv.className = 'reference-details';
+                        detailsDiv.textContent = `Topic: ${ref.topic}, SubTopic: ${ref.subtopic}, Section: ${ref.section}, Paragraph: ${ref.paragraph}`;
+                        
+                        refDiv.appendChild(uriLink);
+                        refDiv.appendChild(detailsDiv);
+                        referencesContainer.appendChild(refDiv);
+                    });
+                } else {
+                    referencesContainer.innerHTML = '<p>未找到参考标准</p>';
+                }
+                
+                showResult();
+            }
+            
+            function loadElementsList() {
+                // 显示加载状态
+                showListLoading();
+                hideListError();
+                
+                // 计算skip参数
+                const skip = currentPage * pageSize;
+                
+                // 构造API URL
+                let url;
+                if (currentKeyword) {
+                    url = `${API_BASE}/search?keyword=${encodeURIComponent(currentKeyword)}&skip=${skip}&limit=${pageSize}`;
+                } else {
+                    url = `${API_BASE}/elements?skip=${skip}&limit=${pageSize}`;
+                }
+                
+                // 调用API
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        hideListLoading();
+                        displayElementsList(data);
+                    })
+                    .catch(error => {
+                        hideListLoading();
+                        showListError(`加载失败: ${error.message}`);
+                    });
+            }
+            
+            function displayElementsList(data) {
+                // 显示分页信息
+                const start = data.skip + 1;
+                const end = Math.min(data.skip + data.elements.length, data.total);
+                paginationInfoDiv.textContent = `显示 ${start} - ${end} 条，共 ${data.total} 条`;
+                
+                // 更新分页按钮状态
+                prevPageBtn.disabled = data.skip === 0;
+                nextPageBtn.disabled = data.skip + data.elements.length >= data.total;
+                
+                // 显示元素列表
+                elementsListDiv.innerHTML = '';
+                
+                if (data.elements && data.elements.length > 0) {
+                    data.elements.forEach(element => {
+                        const elementDiv = document.createElement('div');
+                        elementDiv.className = 'element-item';
+                        elementDiv.textContent = element;
+                        elementDiv.addEventListener('click', function() {
+                            // 切换到查询标签页并填充查询框
+                            tabs.forEach(t => t.classList.remove('active'));
+                            tabContents.forEach(tc => tc.classList.remove('active'));
+                            document.querySelector('.tab[data-tab="search"]').classList.add('active');
+                            document.getElementById('search-tab').classList.add('active');
+                            
+                            // 填充查询框并执行查询
+                            elementNameInput.value = element;
+                            searchElement();
+                        });
+                        elementsListDiv.appendChild(elementDiv);
+                    });
+                } else {
+                    elementsListDiv.innerHTML = '<p>未找到匹配的指标</p>';
+                }
+            }
+            
+            function showLoading() {
+                loadingDiv.classList.add('show');
+            }
+            
+            function hideLoading() {
+                loadingDiv.classList.remove('show');
+            }
+            
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+            
+            function hideError() {
+                errorDiv.style.display = 'none';
+            }
+            
+            function showResult() {
+                resultDiv.classList.add('show');
+            }
+            
+            function hideResult() {
+                resultDiv.classList.remove('show');
+            }
+            
+            function showListLoading() {
+                listLoadingDiv.classList.add('show');
+            }
+            
+            function hideListLoading() {
+                listLoadingDiv.classList.remove('show');
+            }
+            
+            function showListError(message) {
+                listErrorDiv.textContent = message;
+                listErrorDiv.style.display = 'block';
+            }
+            
+            function hideListError() {
+                listErrorDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
